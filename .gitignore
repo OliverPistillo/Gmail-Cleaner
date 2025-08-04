@@ -45,5 +45,5 @@ token.pickle
 token.json
 
 # Lock files (optional, depending on your preference)
-# package-lock.json
+package-lock.json
 # yarn.lock
