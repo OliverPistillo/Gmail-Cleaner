@@ -14,13 +14,36 @@ Un'applicazione desktop moderna per pulire automaticamente la tua casella Gmail 
 
 ## ✨ Caratteristiche
 
-- 🎨 **Design Moderno**: Interfaccia elegante con effetti glassmorphism e animazioni fluide.
-- 🔐 **Autenticazione Sicura**: OAuth2 con Google per accesso sicuro a Gmail.
-- 🤖 **Disiscrizione Automatica**: Clicca automaticamente i link di disiscrizione.
-- 🗑️ **Pulizia in Massa**: Elimina tutte le email da mittenti selezionati.
-- 📊 **Statistiche in Tempo Reale**: Monitora il progresso della pulizia.
-- 🔔 **Gestione Manuale**: Notifiche per i casi che richiedono intervento manuale.
-- 📱 **Multi-piattaforma**: Funziona su Windows, macOS e Linux.
+### 🧹 Pulizia e Sfoltimento Casella
+- **Cancellazione automatica email inutili**: Elimina spam, promozioni e vecchi messaggi
+- **Pulizia intelligente**: Identifica ed elimina periodicamente la "spazzatura"
+- **Gestione spazio**: Libera spazio nella tua casella Gmail
+
+### 📧 Disiscrizione da Servizi
+- **Disiscrizione automatica**: Annulla l'iscrizione dalle newsletter con un click
+- **Gestione casi complessi**: Segnala le disiscrizioni che richiedono intervento manuale
+- **Report dettagliato**: Traccia tutte le disiscrizioni effettuate
+
+### 📁 Organizzazione e Archiviazione
+- **Archiviazione intelligente**: Sposta automaticamente email vecchie ma importanti
+- **Etichette automatiche**: Organizza email in categorie (lavoro, personale, finanze)
+- **Casella pulita**: Mantiene solo i messaggi prioritari in evidenza
+
+### ⚙️ Gestione Avanzata
+- **Gestione allegati**: Trova e gestisci email con allegati pesanti
+- **Regole personalizzate**: Crea filtri custom per ordinare le email
+- **Automazione completa**: Definisci criteri personali o aziendali
+
+### ✨ Ottimizzazione One-Click
+- **Ottimizza tutto**: Esegui tutte le operazioni con un solo pulsante
+- **Processo automatizzato**: Pulizia, organizzazione e archiviazione in sequenza
+- **Report completo**: Statistiche dettagliate di tutte le operazioni
+
+### 🎨 Interfaccia Premium
+- **Design moderno**: Effetti glassmorphism e animazioni fluide
+- **Dashboard intuitiva**: Visualizza statistiche in tempo reale
+- **Multi-piattaforma**: Funziona su Windows, macOS e Linux
+- **Gestione utente**: Login/logout e profilo utente integrato
 
 ---
 
@@ -251,4 +274,5 @@ Distribuito sotto licenza MIT. Vedi `LICENSE` per maggiori informazioni.
 ---
 
 Se vuoi altre modifiche (ad esempio aggiungere badge, ottimizzare l'inglese, rimuovere sezioni, ecc.) dimmelo pure!
+
 
