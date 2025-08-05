@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getOldEmails: (days) => ipcRenderer.invoke('get-old-emails', days),
   getEmailsWithAttachments: (minSizeMB) => ipcRenderer.invoke('get-emails-with-attachments', minSizeMB),
   getEmailMetadata: (msgId) => ipcRenderer.invoke('get-email-metadata', msgId),
+  cleanAutomatedEmails: () => ipcRenderer.invoke('clean-automated-emails'),
   
   // Email actions
   deleteMessages: (msgIds) => ipcRenderer.invoke('delete-messages', msgIds),

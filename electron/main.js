@@ -277,19 +277,35 @@ ipcMain.handle('get-newsletters', async (event, maxResults = null) => {
             const metadata = await gmail.users.messages.get({
               userId: 'me',
               id: msg.id,
-              format: 'metadata',
-              metadataHeaders: ['From', 'Subject', 'List-Unsubscribe', 'Date']
+              format: 'full'
             });
             
-            const headers = metadata.data.payload.headers || [];
+            const payload = metadata.data.payload;
+            const headers = payload.headers || [];
             const emailData = {
               id: msg.id,
               threadId: msg.threadId
             };
             
+            // Extract headers
             headers.forEach(header => {
-              emailData[header.name.toLowerCase()] = header.value;
+              const name = header.name.toLowerCase();
+              if (name === 'from' || name === 'subject' || name === 'date' || name === 'list-unsubscribe') {
+                emailData[name] = header.value || '';
+              }
             });
+            
+            // Ensure list-unsubscribe exists
+            if (!emailData['list-unsubscribe']) {
+              // Try to find unsubscribe link in body
+              const body = extractBody(payload);
+              const unsubLink = findUnsubscribeInBody(body);
+              if (unsubLink) {
+                emailData['list-unsubscribe'] = `<${unsubLink}>`;
+              } else {
+                emailData['list-unsubscribe'] = '';
+              }
+            }
             
             emails.push(emailData);
           } catch (e) {
@@ -306,6 +322,46 @@ ipcMain.handle('get-newsletters', async (event, maxResults = null) => {
     throw new Error(`Failed to fetch emails: ${error.message}`);
   }
 });
+
+// Helper function to extract email body
+function extractBody(payload) {
+  let body = '';
+  
+  if (payload.body && payload.body.data) {
+    body = Buffer.from(payload.body.data, 'base64').toString('utf-8');
+  } else if (payload.parts) {
+    for (const part of payload.parts) {
+      if (part.mimeType === 'text/html' || part.mimeType === 'text/plain') {
+        if (part.body && part.body.data) {
+          body = Buffer.from(part.body.data, 'base64').toString('utf-8');
+          break;
+        }
+      }
+    }
+  }
+  
+  return body;
+}
+
+// Helper function to find unsubscribe link in body
+function findUnsubscribeInBody(body) {
+  // Look for common unsubscribe patterns
+  const patterns = [
+    /href=["']([^"']*unsubscribe[^"']*?)["']/i,
+    /href=["']([^"']*opt-out[^"']*?)["']/i,
+    /href=["']([^"']*remove[^"']*?)["']/i,
+    /(https?:\/\/[^\s]+unsubscribe[^\s]*)/i
+  ];
+  
+  for (const pattern of patterns) {
+    const match = body.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  
+  return null;
+}
 
 // Get spam and promotional emails
 ipcMain.handle('get-spam-promotions', async () => {
@@ -575,6 +631,100 @@ ipcMain.handle('create-filter', async (event, criteria, action) => {
   } catch (error) {
     throw new Error(`Failed to create filter: ${error.message}`);
   }
+});
+
+// Clean automated emails
+ipcMain.handle('clean-automated-emails', async () => {
+  const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+  
+  // Get automated emails first
+  const automatedQueries = [
+    'subject:"accesso" OR subject:"login" OR subject:"signin"',
+    'subject:"conferma ordine" OR subject:"order confirmation"',
+    'subject:"verifica" OR subject:"verification"',
+    'subject:"codice di sicurezza" OR subject:"security code"',
+    'subject:"notifica di accesso" OR subject:"new sign-in"',
+    'from:noreply OR from:no-reply OR from:donotreply'
+  ];
+  
+  const automatedEmails = new Map();
+  
+  for (const query of automatedQueries) {
+    try {
+      const response = await gmail.users.messages.list({
+        userId: 'me',
+        q: `${query} newer_than:7d`,
+        maxResults: 100
+      });
+      
+      if (response.data.messages) {
+        for (const msg of response.data.messages) {
+          try {
+            const details = await gmail.users.messages.get({
+              userId: 'me',
+              id: msg.id,
+              format: 'metadata',
+              metadataHeaders: ['From', 'Subject', 'Date']
+            });
+            
+            const headers = details.data.payload.headers || [];
+            const from = headers.find(h => h.name === 'From')?.value || '';
+            const subject = headers.find(h => h.name === 'Subject')?.value || '';
+            const date = new Date(headers.find(h => h.name === 'Date')?.value || '');
+            
+            // Group by sender and subject pattern
+            const key = `${from.toLowerCase()}|||${subject.toLowerCase().replace(/\d+/g, '')}`;
+            
+            if (!automatedEmails.has(key)) {
+              automatedEmails.set(key, []);
+            }
+            
+            automatedEmails.get(key).push({
+              id: msg.id,
+              from,
+              subject,
+              date
+            });
+          } catch (e) {
+            console.error(`Error getting details for ${msg.id}:`, e);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error with query ${query}:`, error);
+    }
+  }
+  
+  // Delete duplicates keeping only the newest
+  let totalDeleted = 0;
+  let groups = 0;
+  
+  for (const [key, emails] of automatedEmails) {
+    if (emails.length > 1) {
+      groups++;
+      // Sort by date, newest first
+      emails.sort((a, b) => b.date - a.date);
+      const toDelete = emails.slice(1).map(e => e.id);
+      
+      if (toDelete.length > 0) {
+        try {
+          // Delete in batches
+          for (let i = 0; i < toDelete.length; i += 1000) {
+            const batch = toDelete.slice(i, i + 1000);
+            await gmail.users.messages.batchDelete({
+              userId: 'me',
+              requestBody: { ids: batch }
+            });
+          }
+          totalDeleted += toDelete.length;
+        } catch (error) {
+          console.error('Error deleting automated emails:', error);
+        }
+      }
+    }
+  }
+  
+  return { deleted: totalDeleted, groups };
 });
 
 // Fetch unsubscribe link
